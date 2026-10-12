@@ -103,6 +103,11 @@ code {
 }
 .btn:hover { filter: brightness(1.1); }
 
+/* 숫자 요약 */
+.stats { list-style: none; display: flex; flex-wrap: wrap; gap: 12px 32px; margin-top: 32px; }
+.stats b { display: block; font-size: 1.9rem; line-height: 1.1; color: var(--accent); }
+.stats span { color: var(--muted); font-size: 0.85rem; }
+
 /* 프로필 카드 */
 .profile {
   background: var(--surface); border: 1px solid var(--line);
@@ -115,10 +120,8 @@ code {
 /* 공통 섹션 */
 .section { padding: 64px 0; }
 .section.alt { background: var(--surface); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
-.section h2 {
-  font-family: var(--serif); font-size: 1.6rem; margin-bottom: 6px;
-  display: flex; align-items: baseline; gap: 12px;
-}
+.section h2 { font-family: var(--serif); font-size: 1.7rem; margin-bottom: 8px; }
+.kicker { color: var(--accent); font-size: 0.82rem; letter-spacing: 0.06em; margin-bottom: 4px; }
 .num { font-family: var(--mono); font-size: 0.95rem; color: var(--accent); }
 .section-lead { color: var(--muted); margin-bottom: 24px; }
 .legend { display: inline-block; margin-left: 8px; font-size: 0.85rem; }
@@ -162,6 +165,25 @@ dd.empty { color: var(--muted); font-style: italic; }
 /* 이 수업 */
 .narrow { max-width: 760px; }
 #why p + p { margin-top: 14px; }
+
+.quote {
+  margin-top: 24px; padding: 18px 22px; border-left: 4px solid var(--accent);
+  background: var(--bg); border-radius: 0 10px 10px 0;
+  font-family: var(--serif); font-size: 1.1rem; line-height: 1.6;
+}
+
+/* FAQ */
+.faq { margin-top: 20px; }
+.faq details { background: var(--bg); border: 1px solid var(--line); border-radius: 10px; margin-bottom: 10px; }
+.faq summary {
+  cursor: pointer; padding: 16px 20px; font-weight: 700; list-style: none;
+  display: flex; justify-content: space-between; gap: 12px;
+}
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary::after { content: "+"; color: var(--accent); font-size: 1.2rem; line-height: 1.4; }
+.faq details[open] summary::after { content: "−"; }
+.faq details[open] { border-color: var(--accent); }
+.faq details p { padding: 0 20px 16px; color: var(--muted); }
 
 /* 관심사 */
 .grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-top: 20px; }
