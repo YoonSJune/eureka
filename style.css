@@ -103,28 +103,14 @@ code {
 }
 .btn:hover { filter: brightness(1.1); }
 
-/* 장식용 미니 차트 카드 */
-.ticker {
+/* 프로필 카드 */
+.profile {
   background: var(--surface); border: 1px solid var(--line);
-  border-radius: 12px; padding: 18px 20px;
+  border-radius: 12px; padding: 20px 22px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
 }
-.ticker-head {
-  display: flex; justify-content: space-between;
-  font-family: var(--mono); font-size: 0.8rem; color: var(--muted);
-}
-.spark { width: 100%; height: auto; margin: 10px 0 6px; }
-.spark polyline {
-  fill: none; stroke: var(--up); stroke-width: 2.5;
-  stroke-linejoin: round; stroke-linecap: round;
-}
-.ticker ul { list-style: none; }
-.ticker li {
-  display: flex; justify-content: space-between;
-  border-top: 1px dashed var(--line); padding: 6px 0; font-size: 0.9rem;
-}
-.up { color: var(--up); }
-.flat { color: var(--muted); font-size: 0.7rem; }
+.profile-head { font-size: 0.8rem; color: var(--muted); margin-bottom: 10px; }
+.profile dl { grid-template-columns: 5.5em 1fr; }
 
 /* 공통 섹션 */
 .section { padding: 64px 0; }
@@ -145,21 +131,6 @@ code {
 td .st { margin-left: 0; }
 .st.done { background: var(--accent); }
 .st.doing { background: linear-gradient(90deg, var(--accent) 50%, transparent 50%); }
-
-/* 작업 목록 표 */
-.index {
-  width: 100%; border-collapse: collapse; background: var(--surface);
-  border: 1px solid var(--line); border-radius: 12px; overflow: hidden;
-  font-size: 0.95rem;
-}
-.index th {
-  text-align: left; font-weight: 500; color: var(--muted); font-size: 0.8rem;
-  background: var(--accent-soft); padding: 10px 14px;
-}
-.index td { padding: 14px; border-top: 1px solid var(--line); vertical-align: top; }
-.index td a { font-weight: 700; text-decoration: none; }
-.index td a:hover { text-decoration: underline; }
-.index td:nth-child(3), .index td:nth-child(4) { white-space: nowrap; color: var(--muted); }
 
 /* 작업 설명 */
 .details { display: grid; gap: 18px; margin-top: 32px; }
@@ -183,47 +154,28 @@ dt { color: var(--muted); font-weight: 500; }
 dd.empty { color: var(--muted); font-style: italic; }
 .back { display: inline-block; margin-top: 14px; font-size: 0.85rem; text-decoration: none; }
 
-/* 분석 방식 */
-.flow {
-  list-style: none; counter-reset: step;
-  display: grid; gap: 12px; grid-template-columns: repeat(5, 1fr);
-}
-.flow li {
-  counter-increment: step; position: relative;
-  background: var(--bg); border: 1px solid var(--line); border-radius: 10px;
-  padding: 16px 14px;
-}
-.flow li::before {
-  content: "0" counter(step); display: block;
-  font-family: var(--mono); color: var(--accent); font-size: 0.8rem;
-}
-.flow b { display: block; font-size: 1.02rem; }
-.flow span { color: var(--muted); font-size: 0.85rem; }
+.work-desc { color: var(--muted); margin-bottom: 12px; }
+.links { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+.btn.small { padding: 7px 16px; font-size: 0.88rem; }
+.btn.ghost { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
 
-/* 기록 */
-.timeline { list-style: none; border-left: 2px solid var(--line); margin-left: 6px; padding-left: 24px; }
-.timeline li { position: relative; }
-.timeline li::before {
-  content: ""; position: absolute; left: -32px; top: 6px;
-  width: 12px; height: 12px; border-radius: 50%; background: var(--accent);
-}
-.date { color: var(--accent); font-size: 0.85rem; }
-.timeline h3 { margin-bottom: 10px; }
+/* 이 수업 */
+.narrow { max-width: 760px; }
+#why p + p { margin-top: 14px; }
 
-/* FAQ */
-.faq details {
-  background: var(--bg); border: 1px solid var(--line);
-  border-radius: 10px; margin-bottom: 10px;
+/* 관심사 */
+.grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-top: 20px; }
+.mini {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px;
 }
-.faq summary {
-  cursor: pointer; padding: 16px 20px; font-weight: 700; list-style: none;
-  display: flex; justify-content: space-between; gap: 12px;
-}
-.faq summary::-webkit-details-marker { display: none; }
-.faq summary::after { content: "+"; color: var(--accent); font-size: 1.2rem; line-height: 1.4; }
-.faq details[open] summary::after { content: "−"; }
-.faq details[open] { border-color: var(--accent); }
-.faq details p { padding: 0 20px 16px; color: var(--muted); }
+.mini b { display: block; color: var(--accent); margin-bottom: 4px; }
+.mini span { color: var(--muted); font-size: 0.9rem; }
+
+/* 연락 */
+.contact { list-style: none; }
+.contact li { display: flex; flex-wrap: wrap; gap: 4px 16px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.contact span { color: var(--muted); width: 5em; }
+.contact a { font-weight: 700; word-break: break-all; }
 
 /* 푸터 */
 .site-footer {
@@ -234,8 +186,7 @@ dd.empty { color: var(--muted); font-style: italic; }
 /* 태블릿 */
 @media (max-width: 760px) {
   .hero-grid { grid-template-columns: 1fr; }
-  .ticker { max-width: 360px; }
-  .flow { grid-template-columns: 1fr 1fr; }
+  .profile { max-width: 420px; }
 }
 
 /* 휴대폰 (360px) */
@@ -243,12 +194,6 @@ dd.empty { color: var(--muted); font-style: italic; }
   .hero { padding: 48px 0 44px; }
   .header-inner { justify-content: center; }
   .menu { justify-content: center; gap: 4px 16px; }
-  .index thead { display: none; }
-  .index tr { display: grid; grid-template-columns: auto 1fr; border-top: 1px solid var(--line); padding: 10px 14px; gap: 2px 10px; }
-  .index td { border: 0; padding: 0; }
-  .index td:nth-child(1) { grid-row: span 3; }
-  .index td:nth-child(3), .index td:nth-child(4) { font-size: 0.85rem; }
-  .flow { grid-template-columns: 1fr; }
   dl { grid-template-columns: 1fr; }
   dd { margin-bottom: 6px; }
 }
