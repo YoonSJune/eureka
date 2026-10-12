@@ -4,189 +4,69 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>윤석준의 개인웹(유레카)</title>
-  <meta name="description" content="국민대학교 경영정보학부 윤석준의 작업 노트">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans+KR:wght@400;500;700&family=Noto+Serif+KR:wght@700&display=swap">
+  <meta name="description" content="국민대 경영정보학부 윤석준의 개인 웹페이지">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
   <link rel="stylesheet" href="./style.css">
 </head>
 <body>
-  <a class="skip" href="#main">본문으로 건너뛰기</a>
-
-  <header class="site-header">
-    <div class="wrap header-inner">
-      <a class="logo" href="#top">유레카<span>윤석준의 개인웹</span></a>
-      <nav aria-label="주요 메뉴">
-        <ul class="menu">
-          <li><a href="#about">소개</a></li>
-          <li><a href="#works">작업</a></li>
-          <li><a href="#why">이 수업</a></li>
-          <li><a href="#interests">관심사</a></li>
-          <li><a href="#faq">FAQ</a></li>
-          <li><a href="#contact">연락</a></li>
-        </ul>
-      </nav>
-    </div>
+  <header class="top wrap">
+    <a class="logo" href="#">eureka<span>.</span></a>
+    <nav aria-label="메뉴">
+      <a href="#works">Works</a>
+      <a href="#about">About</a>
+      <a href="#contact">Contact</a>
+    </nav>
   </header>
 
-  <main id="main">
-    <!-- 첫 화면: 독자와 목적 (완료 기준 01) -->
-    <section class="hero" id="top">
-      <div class="wrap hero-grid">
-        <div>
-          <p class="eyebrow">국민대학교 경영정보학부 · 20학번</p>
-          <h1>경영과 데이터로<br>경제를 읽는 사람,<br>윤석준입니다</h1>
-          <p class="lead">
-            같은 수업 동기들이 <strong>제가 만든 게임과 작업</strong>을 1분 안에 찾아볼 수 있도록 만든 페이지입니다.
-          </p>
-          <a class="btn" href="#works">작업 먼저 보기</a>
-          <ul class="stats">
-            <li><b class="mono">1</b><span>배포한 게임</span></li>
-            <li><b class="mono">1</b><span>공개한 홈페이지</span></li>
-            <li><b class="mono">4</b><span>관심 분야</span></li>
-          </ul>
-        </div>
-
-        <aside class="profile" id="about" aria-label="간단한 소개">
-          <p class="profile-head mono">PROFILE</p>
-          <dl>
-            <dt>이름</dt><dd>윤석준</dd>
-            <dt>소속</dt><dd>국민대학교 경영정보학부</dd>
-            <dt>학번</dt><dd class="mono">20202714</dd>
-            <dt>관심</dt><dd>경제 · 금융 · 데이터</dd>
-            <dt>배우는 중</dt><dd>HTML, CSS, GitHub Pages</dd>
-          </dl>
-        </aside>
-      </div>
+  <main>
+    <section class="hero wrap">
+      <p class="hello">안녕하세요,</p>
+      <h1>윤석준<span>입니다.</span></h1>
+      <p class="sub">경영정보학부에서 경제와 금융을 데이터로 보는 연습을 하고 있어요.</p>
     </section>
 
-    <!-- 메뉴 → 작업 목록 → 작업 설명 (완료 기준 02) -->
-    <section id="works" class="section">
+    <section id="works" class="works">
       <div class="wrap">
-        <p class="kicker mono">01 / Works</p>
-        <h2>작업</h2>
-        <p class="section-lead">
-          직접 만들고 배포한 것들입니다.
-          <span class="legend"><i class="st done"></i>완료 <i class="st doing"></i>진행 중 <i class="st plan"></i>계획</span>
-        </p>
+        <h2 class="label">Works</h2>
 
-        <div class="details">
-          <article id="game" class="work">
-            <header>
-              <span class="mono">01</span>
-              <h3>STAR SWARM · 슈팅 게임</h3>
-              <span class="badge done">배포 완료</span>
-            </header>
-            <p class="work-desc">고전 아케이드 스타일의 고정 화면 슈팅 게임입니다. 40기 편대가 5개 웨이브로 몰려오고, 급강하 공격을 피하며 격추합니다. 그래픽·사운드·이름은 모두 직접 새로 만든 오리지널이고, GitHub Pages로 배포해 링크 하나로 바로 할 수 있습니다.</p>
-            <dl>
-              <dt>만든 것</dt><dd>ASP.NET Core(.NET 8) · JavaScript</dd>
-              <dt>조작</dt><dd>← → 이동 · SPACE 발사 · 모바일은 터치 버튼</dd>
-              <dt>배운 것</dt><dd>공개 주소에 올려야 친구가 링크 하나로 바로 써 볼 수 있다는 것</dd>
-            </dl>
-            <div class="links">
-              <a class="btn small" href="https://yoonsjune.github.io/eureka/">게임 해 보기</a>
-              <a class="btn small ghost" href="https://github.com/YoonSJune/eureka">코드 보기</a>
-            </div>
-          </article>
+        <a class="feature" href="https://yoonsjune.github.io/eureka/">
+          <div class="screen">
+            <img src="./images/star-swarm.png" width="682" height="876" alt="STAR SWARM 게임 화면">
+          </div>
+          <div class="feature-text">
+            <p class="tag">Game · 2026</p>
+            <h3>STAR SWARM</h3>
+            <p>오락실 감성의 슈팅 게임. 브라우저에서 바로 플레이할 수 있어요.</p>
+            <span class="go">플레이하기 <i aria-hidden="true">→</i></span>
+          </div>
+        </a>
 
-          <article id="homepage" class="work">
-            <header>
-              <span class="mono">02</span>
-              <h3>이 작업 노트 페이지</h3>
-              <span class="badge doing">진행 중</span>
-            </header>
-            <p class="work-desc">제 작업을 한곳에 모아 보여 주는 한 페이지짜리 사이트입니다.</p>
-            <dl>
-              <dt>만든 것</dt><dd>HTML · CSS 두 파일</dd>
-              <dt>배운 것</dt><dd>링크의 <code>href="#works"</code>와 목적지의 <code>id="works"</code>를 맞추면 페이지 안에서 이동한다는 것</dd>
-            </dl>
-            <div class="links">
-              <a class="btn small ghost" href="https://github.com/YoonSJune/eureka">코드 보기</a>
-            </div>
-          </article>
-
-          <article id="next" class="work">
-            <header>
-              <span class="mono">03</span>
-              <h3>경제 데이터 시각화</h3>
-              <span class="badge plan">계획</span>
-            </header>
-            <p class="work-desc">금리·환율 같은 공개 경제 데이터를 그래프로 그려 보는 작은 웹 작업을 만들 계획입니다.</p>
-          </article>
-        </div>
-      </div>
-    </section>
-
-    <section id="why" class="section alt">
-      <div class="wrap narrow">
-        <p class="kicker mono">02 / Why</p>
-        <h2>왜 이 수업을 듣나요?</h2>
-        <p>
-          경영정보학부에서 경영과 IT를 함께 배우면서, 특히 관심 있는 경제·금융 분야도 결국 데이터를 직접 다뤄야 한다는 것을 느꼈습니다.
-          남이 만든 도구만 쓰는 대신, 필요한 것을 직접 만들고 다른 사람에게 보여 줄 수 있는 사람이 되고 싶어서 이 수업을 듣고 있습니다.
-        </p>
-        <p>
-          특히 요즘은 AI 도구 덕분에 코딩을 처음 시작하는 사람도 생각보다 빨리 무언가를 만들 수 있습니다.
-          이 수업에서 만들고, 배포하고, 친구가 써 보는 모습을 보며 고치는 과정을 몸으로 익히려고 합니다.
-        </p>
-        <blockquote class="quote">
-          “무엇을 만들 수 있을까?”보다<br>“누구의 어떤 질문에 답할까?”를 먼저 생각합니다.
-        </blockquote>
-      </div>
-    </section>
-
-    <section id="interests" class="section">
-      <div class="wrap">
-        <p class="kicker mono">03 / Interests</p>
-        <h2>관심사</h2>
-        <div class="grid">
-          <div class="mini"><b>거시경제</b><span>금리, 환율, 물가가 서로 어떻게 움직이는지</span></div>
-          <div class="mini"><b>금융시장</b><span>주식·채권 시장과 투자 판단의 근거</span></div>
-          <div class="mini"><b>데이터 분석</b><span>숫자로 근거 있는 결론을 내는 방법</span></div>
-          <div class="mini"><b>AI 활용</b><span>AI 도구로 분석과 개발을 더 빠르게 하는 법</span></div>
-        </div>
-      </div>
-    </section>
-
-    <section id="faq" class="section alt">
-      <div class="wrap narrow">
-        <p class="kicker mono">04 / FAQ</p>
-        <h2>자주 묻는 질문</h2>
-        <div class="faq">
-          <details>
-            <summary>게임은 어떻게 하나요?</summary>
-            <p>위의 "게임 해 보기"를 누르면 바로 시작됩니다. 키보드 ← → 로 움직이고 SPACE로 쏘며, 휴대폰에서는 화면 아래 버튼을 씁니다.</p>
-          </details>
-          <details>
-            <summary>코딩을 원래 할 줄 알았나요?</summary>
-            <p>아니요. 이번 학기에 시작했고, AI 도구의 도움을 받아 만들면서 배우고 있습니다.</p>
-          </details>
-          <details>
-            <summary>경영정보학부인데 왜 경제·금융인가요?</summary>
-            <p>경영과 IT를 함께 배우는 전공이라, 경제·금융 데이터를 직접 분석하고 보여 주는 데 바로 쓸 수 있기 때문입니다.</p>
-          </details>
-        </div>
-      </div>
-    </section>
-
-    <section id="contact" class="section">
-      <div class="wrap narrow">
-        <p class="kicker mono">05 / Contact</p>
-        <h2>연락</h2>
-        <p class="section-lead">작업에 대한 의견은 언제든 환영합니다.</p>
-        <ul class="contact">
-          <li><span>이메일</span><a href="mailto:yoonsj1109@kookmin.ac.kr">yoonsj1109@kookmin.ac.kr</a></li>
-          <li><span>GitHub</span><a href="https://github.com/YoonSJune">github.com/YoonSJune</a></li>
+        <ul class="list">
+          <li>
+            <a href="https://github.com/YoonSJune/YoonSJune.github.io">
+              <span class="t">유레카 · 개인웹</span><span class="y">2026</span>
+            </a>
+          </li>
+          <li class="soon"><span class="t">다음 작업 준비 중</span><span class="y">—</span></li>
         </ul>
       </div>
+    </section>
+
+    <section id="about" class="wrap about">
+      <h2 class="label">About</h2>
+      <div class="about-body">
+        <p>국민대학교 경영정보학부 20학번.<br>관심 분야는 거시경제, 금융시장, 데이터 분석이에요.</p>
+        <p class="muted">필요한 건 직접 만들어서 보여 줄 수 있는 사람이 되고 싶어 이 수업을 듣고 있어요.</p>
+      </div>
+    </section>
+
+    <section id="contact" class="wrap contact">
+      <h2 class="label">Contact</h2>
+      <a class="mail" href="mailto:yoonsj1109@kookmin.ac.kr">yoonsj1109@kookmin.ac.kr</a>
+      <p class="muted"><a href="https://github.com/YoonSJune">GitHub</a> · 학번 20202714</p>
     </section>
   </main>
 
-  <footer class="site-footer">
-    <div class="wrap">
-      <p>© 2026 윤석준 · GitHub Pages로 공개한 페이지입니다.</p>
-      <a href="#top">맨 위로 ↑</a>
-    </div>
-  </footer>
+  <footer class="wrap">© 2026 윤석준</footer>
 </body>
 </html>
