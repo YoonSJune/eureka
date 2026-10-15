@@ -4,115 +4,131 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>윤석준의 개인웹(유레카)</title>
-  <meta name="description" content="국민대학교 경영정보학부 윤석준의 작업 노트">
+  <meta name="description" content="국민대학교 경영정보학부 윤석준의 개인 웹페이지">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans+KR:wght@400;500;700&family=Noto+Serif+KR:wght@700&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
   <link rel="stylesheet" href="./style.css">
 </head>
 <body>
-  <a class="skip" href="#main">본문으로 건너뛰기</a>
+  <div class="page-shell">
 
-  <header class="site-header">
-    <div class="wrap header-inner">
-      <a class="logo" href="#top">유레카<span>윤석준의 개인웹</span></a>
-      <nav aria-label="주요 메뉴">
-        <ul class="menu">
-          <li><a href="#about">소개</a></li>
-          <li><a href="#works">작업</a></li>
-          <li><a href="#contact">연락</a></li>
-        </ul>
+    <!-- 상단 프로필 -->
+    <header class="site-intro">
+      <div class="name-row">
+        <h1 class="author-title">윤석준</h1>
+        <nav class="top-nav" aria-label="주요 메뉴">
+          <a href="#" class="active">Home</a>
+          <a href="https://github.com/YoonSJune">GitHub ↗</a>
+        </nav>
+      </div>
+
+      <div class="ledger">
+        <div class="ledger-row primary">
+          <span class="inst">국민대학교</span>
+          <span class="role">경영정보학부 <span class="muted-tag">(20학번)</span></span>
+        </div>
+        <div class="ledger-row secondary">
+          <span class="inst">Interests</span>
+          <span class="role">거시경제 · 금융시장 · 데이터 분석 · AI 활용</span>
+        </div>
+        <div class="ledger-row secondary">
+          <span class="inst">Contact</span>
+          <span class="role"><a href="mailto:yoonsj1109@kookmin.ac.kr">yoonsj1109@kookmin.ac.kr</a></span>
+        </div>
+      </div>
+
+      <div class="bio">
+        <p>경영과 IT를 함께 배우며, 경제·금융을 데이터로 이해하는 방법을 공부하고 있습니다.</p>
+        <p class="featured">직접 만든 슈팅 게임 <a href="https://yoonsjune.github.io/eureka/">STAR SWARM ↗</a>을 공개했습니다.</p>
+      </div>
+
+      <nav class="section-nav" aria-label="섹션">
+        <a href="#projects"><span class="num">01</span>Projects</a>
+        <a href="#next"><span class="num">02</span>In Progress</a>
       </nav>
-    </div>
-  </header>
+    </header>
 
-  <main id="main">
-    <!-- 첫 화면: 독자와 목적 (완료 기준 01) -->
-    <section class="hero" id="top">
-      <div class="wrap hero-grid">
-        <div>
-          <p class="eyebrow">국민대학교 경영정보학부 · 20학번</p>
-          <p class="hello">안녕하세요,</p>
-          <h1>윤석준입니다</h1>
-          <p class="lead">경제·금융을 데이터로 보는 연습을 하고 있어요.<br>제가 만든 게임과 작업을 모아 두었습니다.</p>
-          <a class="btn" href="#works">작업 먼저 보기</a>
+    <main>
+      <section class="section" id="projects">
+        <div class="section-head">
+          <h2 class="section-label">01 · Projects</h2>
+          <span class="section-meta">2 Items</span>
+        </div>
+        <div class="table-head grid">
+          <div>Title &amp; Materials</div>
+          <div>Built With</div>
+          <div>Type / Year</div>
         </div>
 
-        <aside class="profile" id="about" aria-label="간단한 소개">
-          <p class="profile-head mono">PROFILE</p>
-          <dl>
-            <dt>이름</dt><dd>윤석준</dd>
-            <dt>소속</dt><dd>국민대학교 경영정보학부</dd>
-            <dt>학번</dt><dd class="mono">20202714</dd>
-            <dt>관심</dt><dd>경제 · 금융 · 데이터</dd>
-            <dt>배우는 중</dt><dd>HTML, CSS, GitHub Pages</dd>
-          </dl>
-        </aside>
-      </div>
-    </section>
-
-    <!-- 메뉴 → 작업 목록 → 작업 설명 (완료 기준 02) -->
-    <section id="works" class="section">
-      <div class="wrap">
-        <h2><span class="num">01</span>작업</h2>
-        <p class="section-lead">직접 만들고 배포한 것들이에요.</p>
-
-        <div class="details">
-          <article id="game" class="work game">
-            <a class="thumb" href="https://yoonsjune.github.io/eureka/"><img src="./images/star-swarm.png" width="682" height="876" alt="STAR SWARM 게임 화면"></a>
-            <div class="game-body">
-            <header>
-              <span class="mono">01</span>
-              <h3>STAR SWARM · 슈팅 게임</h3>
-              <span class="badge done">배포 완료</span>
-            </header>
-            <p class="work-desc">오락실 감성의 슈팅 게임이에요. 적 편대가 웨이브로 몰려오고, 급강하 공격을 피하며 격추해요. 브라우저에서 바로 할 수 있어요.</p>
-            <dl>
-              <dt>만든 것</dt><dd>ASP.NET Core(.NET 8) · JavaScript</dd>
-              <dt>조작</dt><dd>← → 이동 · SPACE 발사 · 모바일은 터치 버튼</dd>
-            </dl>
-            <div class="links">
-              <a class="btn small" href="https://yoonsjune.github.io/eureka/">게임 해 보기</a>
-              <a class="btn small ghost" href="https://github.com/YoonSJune/eureka">코드 보기</a>
+        <article class="row">
+          <div class="row-main grid">
+            <div>
+              <div class="title">STAR SWARM <span class="badge">New</span></div>
+              <div class="links">
+                <button type="button" class="toggle">[About ▾]</button>
+                <a href="https://yoonsjune.github.io/eureka/">Play ↗</a>
+                <a href="https://github.com/YoonSJune/eureka">Code ↗</a>
+              </div>
             </div>
-            </div>
-          </article>
+            <div class="sub">ASP.NET Core, JavaScript</div>
+            <div class="venue"><em>Web Game</em>, 2026</div>
+          </div>
+          <div class="drawer">
+            <p>오락실 감성의 고정 화면 슈팅 게임입니다. 적 편대가 웨이브로 몰려오고, 급강하 공격을 피하며 격추합니다. ← → 로 이동하고 SPACE로 발사하며, 휴대폰에서는 화면 아래 버튼으로 플레이할 수 있습니다.</p>
+          </div>
+        </article>
 
-          <article id="homepage" class="work">
-            <header>
-              <span class="mono">02</span>
-              <h3>유레카 · 개인웹</h3>
-              <span class="badge doing">진행 중</span>
-            </header>
-            <p class="work-desc">지금 보고 있는 이 페이지예요. 작업을 한곳에 모아 두려고 만들었어요.</p>
-            <dl>
-              <dt>만든 것</dt><dd>HTML · CSS 두 파일</dd>
-            </dl>
-            <div class="links">
-              <a class="btn small ghost" href="https://github.com/YoonSJune/YoonSJune.github.io">코드 보기</a>
+        <article class="row">
+          <div class="row-main grid">
+            <div>
+              <div class="title">유레카 · 개인웹</div>
+              <div class="links">
+                <a href="https://github.com/YoonSJune/YoonSJune.github.io">Code ↗</a>
+              </div>
             </div>
-          </article>
+            <div class="sub">HTML, CSS</div>
+            <div class="venue"><em>Website</em>, 2026</div>
+          </div>
+        </article>
+      </section>
+
+      <section class="section" id="next">
+        <div class="section-head">
+          <h2 class="section-label">02 · In Progress</h2>
+          <span class="section-meta">1 Item</span>
         </div>
-      </div>
-    </section>
+        <div class="table-head grid">
+          <div>Title &amp; Materials</div>
+          <div>Data</div>
+          <div>Status</div>
+        </div>
 
-    <section id="contact" class="section">
-      <div class="wrap">
-        <h2><span class="num">02</span>연락</h2>
-        <p class="section-lead">작업에 대한 의견은 언제든 환영해요.</p>
-        <ul class="contact">
-          <li><span>이메일</span><a href="mailto:yoonsj1109@kookmin.ac.kr">yoonsj1109@kookmin.ac.kr</a></li>
-          <li><span>GitHub</span><a href="https://github.com/YoonSJune">github.com/YoonSJune</a></li>
-        </ul>
-      </div>
-    </section>
-  </main>
+        <article class="row">
+          <div class="row-main grid">
+            <div>
+              <div class="title">한·미 금리 차이와 원·달러 환율</div>
+            </div>
+            <div class="sub">ECOS, FRED</div>
+            <div class="venue">Planned</div>
+          </div>
+        </article>
+      </section>
+    </main>
 
-  <footer class="site-footer">
-    <div class="wrap">
-      <p>© 2026 윤석준</p>
-      <a href="#top">맨 위로 ↑</a>
-    </div>
-  </footer>
+    <footer class="site-footer">
+      <span>윤석준</span>
+      <span>국민대학교 경영정보학부 · 2026</span>
+    </footer>
+  </div>
+
+  <script>
+    document.querySelectorAll('.toggle').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        btn.closest('.row').classList.toggle('open');
+      });
+    });
+  </script>
 </body>
 </html>
