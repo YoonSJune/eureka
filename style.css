@@ -143,3 +143,4 @@ a:focus-visible, button:focus-visible { outline: 2px solid var(--text); outline-
   .grid { grid-template-columns: 1fr; gap: 0.25rem; }
   .venue { text-align: left; }
 }
+.title.empty { color: var(--muted); }
