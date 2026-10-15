@@ -1,0 +1,19 @@
+name: capture-reference
+on:
+  push:
+    branches: [claude/brave-cray-ld3mbw]
+    paths: [tools/capture.mjs, .github/workflows/capture-ref.yml]
+permissions:
+  contents: write
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    container: mcr.microsoft.com/playwright:v1.47.2-jammy
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm init -y >/dev/null && npm i playwright@1.47.2
+      - run: node tools/capture.mjs
+      - run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          git config user.name capture-bot && git config user.email capture-bot@users.noreply.github.com
+          git add reference && git commit -m "Add captured reference (temporary)" && git push
