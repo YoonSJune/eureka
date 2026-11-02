@@ -84,11 +84,14 @@ function press(code, down) {
   }
   keys[code] = down;
 }
+const typing = e => e.target instanceof HTMLInputElement; // 닉네임 입력 중에는 게임 키를 무시
 addEventListener('keydown', e => {
-  if (['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Space'].includes(e.code)) e.preventDefault();
+  if (typing(e)) return;
+  // Enter 도 막아서, YES 를 고른 Enter 가 방금 열린 닉네임 입력창을 빈 값으로 제출하지 않게 함
+  if (['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Space','Enter'].includes(e.code)) e.preventDefault();
   audio(); press(e.code, true);
 });
-addEventListener('keyup', e => press(e.code, false));
+addEventListener('keyup', e => press(e.code, false)); // 떼는 입력은 항상 반영 (입력창으로 포커스가 넘어가도 키가 눌린 채로 남지 않게)
 document.querySelectorAll('#touch button').forEach(b => {
   const k = b.dataset.k;
   b.addEventListener('pointerdown', e => { e.preventDefault(); audio(); press(k, true); });
@@ -107,9 +110,19 @@ const player = { x: W / 2, y: PY, state: 'play', dual: false, a: 0 };
 const ships = () => player.dual ? [player.x - 8, player.x + 8] : [player.x];
 const isDiving = e => e.st === 'dive' || e.st === 'escort' || e.st === 'beam';
 
-function loadScores() {
-  fetch('/api/scores').then(r => r.json()).then(s => { scores = s; if (s[0]) hi = Math.max(hi, s[0].score); }).catch(() => {});
+// ---------- 랭킹 저장소 (Supabase) ----------
+// publishable 키는 브라우저에 공개해도 되는 키예요. 권한은 테이블 보안 규칙(RLS)이 읽기·추가로만 제한합니다.
+const SUPABASE_URL = 'https://fjonodymlyqlxeqeglqt.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_66XzyDnroaK8V6fPsZHRsQ_PDQAv4aC';
+function supabase(path, opts = {}) {
+  return fetch(`${SUPABASE_URL}/rest/v1/${path}`, { ...opts, headers: { apikey: SUPABASE_KEY, 'Content-Type': 'application/json', ...opts.headers } })
+    .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.status === 201 || r.status === 204 ? null : r.json(); });
 }
+function loadScores() {
+  supabase('scores?select=name,score,stage&order=score.desc,created_at.asc&limit=10')
+    .then(s => { scores = s; if (s[0]) hi = Math.max(hi, s[0].score); }).catch(() => {});
+}
+const saveScore = entry => supabase('scores', { method: 'POST', headers: { Prefer: 'return=minimal' }, body: JSON.stringify(entry) });
 loadScores();
 
 function startGame() {
@@ -461,40 +474,58 @@ function updGame() {
 
 function gameOver() { state = 'over'; stTimer = 0; }
 
-const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 .';
-let nameBuf = [0, 0, 0], namePos = 0;
+// ---------- 게임 종료 후 기록 저장 ----------
+const NICK_RE = /^[A-Za-z0-9 _-]{1,12}$/;
+const nickForm = document.getElementById('nick'), nickInput = document.getElementById('nickInput');
+const nickMsg = document.getElementById('nickMsg'), nickSave = document.getElementById('nickSave');
+let askYes = true, notice = '', noticeT = 0;
+
 function onKey(code) {
   if (code === 'KeyM') muted = !muted;
   if (code === 'KeyP' && state === 'game') paused = !paused;
-  if (state !== 'name') return;
-  const L = LETTERS.length;
-  if (code === 'ArrowRight' || code === 'ArrowUp') nameBuf[namePos] = (nameBuf[namePos] + 1) % L;
-  else if (code === 'ArrowLeft' || code === 'ArrowDown') nameBuf[namePos] = (nameBuf[namePos] + L - 1) % L;
-  else if (code === 'Backspace' && namePos > 0) namePos--;
-  else if (/^Key[A-Z]$/.test(code) || /^Digit\d$/.test(code)) { nameBuf[namePos] = LETTERS.indexOf(code.slice(-1)); namePos++; }
-  else if (isFireKey(code) || code === 'Enter') namePos++;
-  if (namePos >= 3) submitName();
+  if (state !== 'ask') return;
+  if (/^Arrow/.test(code)) askYes = !askYes;
+  else if (code === 'KeyY') openNickForm();
+  else if (code === 'KeyN' || code === 'Escape') skipSave();
+  else if (isFireKey(code) || code === 'Enter') askYes ? openNickForm() : skipSave();
 }
-function submitName() {
-  const name = nameBuf.map(i => LETTERS[i]).join('').trim() || 'AAA';
-  state = 'title';
-  fetch('/api/scores', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, score: G.score, stage: G.stage }) })
-    .then(r => r.ok ? r.json() : scores).then(s => { scores = s; }).catch(() => {});
+// 이 키 입력이 타이틀 화면에서 '게임 시작'으로 다시 쓰이지 않도록 입력을 소모
+function skipSave() { state = 'title'; firePressed = enterPressed = false; }
+function openNickForm() {
+  state = 'name'; nickForm.hidden = false; nickInput.value = ''; nickMsg.textContent = ''; nickInput.focus();
 }
+function closeNickForm(msg = '') {
+  nickForm.hidden = true; nickInput.blur(); state = 'title'; notice = msg; noticeT = msg ? 240 : 0;
+}
+nickInput.addEventListener('input', () => {
+  const v = nickInput.value.replace(/[^A-Za-z0-9 _-]/g, '');
+  if (v !== nickInput.value) { nickInput.value = v; nickMsg.textContent = '영문, 숫자, 공백, _ - 만 쓸 수 있어요'; }
+});
+nickInput.addEventListener('keydown', e => { if (e.key === 'Escape') closeNickForm(); });
+document.getElementById('nickCancel').addEventListener('click', () => closeNickForm());
+nickForm.addEventListener('submit', e => {
+  e.preventDefault();
+  const name = nickInput.value.trim();
+  if (!NICK_RE.test(name)) { nickMsg.textContent = '닉네임을 영문 1~12자로 입력해 주세요'; return; }
+  nickSave.disabled = true; nickMsg.textContent = '저장 중…';
+  saveScore({ name, score: G.score, stage: G.stage, shots: G.shots, hits: G.hits })
+    .then(() => { closeNickForm('RECORD SAVED'); loadScores(); })
+    .catch(() => { nickMsg.textContent = '저장하지 못했어요. 인터넷 연결을 확인하고 다시 눌러 주세요'; })
+    .finally(() => { nickSave.disabled = false; });
+});
 
 function update() {
   frame++;
   stars.forEach(s => { s.y += player.state === 'dead' ? s.sp * 0.3 : s.sp; if (s.y > H) { s.y = 0; s.x = rnd(W); } });
   fx.forEach(f => f.t++); fx = fx.filter(f => f.t < (f.big ? 50 : 22));
   pops.forEach(p => p.t++); pops = pops.filter(p => p.t < 70);
+  if (noticeT > 0) noticeT--;
   if (state === 'title') { if (enterPressed || firePressed) startGame(); }
   else if (state === 'game') { if (!paused) updGame(); }
   else if (state === 'over') { if (++stTimer > 180) { state = 'results'; stTimer = 0; } }
   else if (state === 'results') {
     if (++stTimer > 300 || (stTimer > 60 && (enterPressed || firePressed))) {
-      const qualifies = G.score > 0 && (scores.length < 10 || G.score > scores[scores.length - 1].score);
-      if (qualifies) { state = 'name'; nameBuf = [0, 0, 0]; namePos = 0; } else state = 'title';
+      if (G.score > 0) { state = 'ask'; askYes = true; } else state = 'title';
     }
   }
   firePressed = enterPressed = false;
@@ -588,7 +619,8 @@ function drawTitle() {
   rows.forEach(([img, s], i) => { spr(img, 52, 112 + i * 16); txt(s, 72, 109 + i * 16, '#fff', 'left', 6); });
   txt('TOP 5', W / 2, 166, '#ffd23f', 'center', 8);
   scores.slice(0, 5).forEach((s, i) =>
-    txt(`${i + 1}. ${s.name.padEnd(3)} ${String(s.score).padStart(7)} S${s.stage}`, W / 2, 180 + i * 11, '#ddd', 'center', 6));
+    txt(`${i + 1}. ${s.name.padEnd(12)} ${String(s.score).padStart(7)} S${s.stage}`, W / 2, 180 + i * 11, '#ddd', 'center', 6));
+  if (noticeT > 0) txt(notice, W / 2, 232, '#4df', 'center', 6);
   if (!scores.length) txt('NO RECORDS YET', W / 2, 182, '#777', 'center', 6);
   if ((frame >> 5) & 1 && t >= 1) txt('PRESS ENTER / FIRE', W / 2, 244, '#fff');
   txt('BONUS SHIP 20000 / 70000 PTS', W / 2, 262, '#aaa', 'center', 5);
@@ -610,13 +642,15 @@ function draw() {
       txt('NUMBER OF HITS', 24, cy, '#fff', 'left'); txt(String(G.hits), W - 24, cy, '#fff', 'right');
       txt('HIT-MISS RATIO', 24, cy + 16, '#4df', 'left'); txt(ratio + '%', W - 24, cy + 16, '#4df', 'right');
     }
-    if (state === 'name') {
-      ctx.fillStyle = 'rgba(0,0,0,0.75)'; ctx.fillRect(0, cy - 50, W, 110);
-      txt('ENTER YOUR INITIALS !', W / 2, cy - 40, '#f33');
-      txt('SCORE ' + G.score, W / 2, cy - 24, '#fff');
-      nameBuf.forEach((c, i) => txt(LETTERS[c], W / 2 - 16 + i * 16, cy, i === namePos && (frame >> 3) & 1 ? '#555' : '#ffd23f', 'center', 12));
-      txt('◀▶ 문자 선택 · FIRE 확정', W / 2, cy + 30, '#aaa', 'center', 6);
+    if (state === 'ask') {
+      ctx.fillStyle = 'rgba(0,0,0,0.8)'; ctx.fillRect(0, cy - 50, W, 110);
+      txt('SAVE YOUR RECORD ?', W / 2, cy - 40, '#f33');
+      txt(`SCORE ${G.score}  STAGE ${G.stage}`, W / 2, cy - 22, '#fff', 'center', 6);
+      [['YES', W / 2 - 36, askYes], ['NO', W / 2 + 36, !askYes]].forEach(([s, x, on]) =>
+        txt(on ? `> ${s} <` : s, x, cy, on ? '#ffd23f' : '#777', 'center', 8));
+      txt('◀▶ SELECT · FIRE OK', W / 2, cy + 24, '#aaa', 'center', 6);
     }
+    if (state === 'name') { ctx.fillStyle = 'rgba(0,0,0,0.8)'; ctx.fillRect(0, 0, W, H); }
   }
   drawHUD();
 }

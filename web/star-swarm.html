@@ -8,6 +8,21 @@
   #wrap { padding-inline:16px; box-sizing:border-box; display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; }
   canvas { max-width:100%; image-rendering:pixelated; image-rendering:crisp-edges; background:#000;
     height:min(100vh, calc(100vw * 288 / 224)); aspect-ratio:224/288; }
+  #screen { position:relative; max-width:100%; }
+  #screen canvas { display:block; }
+  #nick { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:82%; box-sizing:border-box;
+    display:flex; flex-direction:column; gap:10px; padding:16px; background:#0b0b18; border:2px solid var(--accent); }
+  #nick[hidden] { display:none; } /* display:flex 가 hidden 속성을 덮어쓰지 않도록 */
+  #nick label { font-size:10px; color:#ffd23f; text-align:center; }
+  #nick input { font-family:inherit; font-size:14px; padding:8px; background:#000; color:#fff; border:2px solid #555;
+    width:100%; box-sizing:border-box; }
+  #nick input:focus { outline:none; border-color:#33e0ff; }
+  #nick .row { display:flex; gap:8px; }
+  #nick button { flex:1; font-family:inherit; font-size:10px; padding:10px 4px; color:#fff; background:#222; border:2px solid #555; cursor:pointer; }
+  #nick button[type=submit] { background:#5a1010; border-color:var(--accent); }
+  #nick button:focus-visible { outline:2px solid #33e0ff; }
+  #nick button:disabled { opacity:.5; cursor:wait; }
+  #nickMsg { margin:0; min-height:1.6em; font-family:system-ui,sans-serif; font-size:12px; color:#ff9a2e; text-align:center; }
   #help { font-size:8px; color:#777; padding:6px 16px; text-align:center; line-height:1.6; }
   #touch { display:none; width:100%; max-width:480px; justify-content:space-between; padding:8px 16px; box-sizing:border-box; }
   #touch button { font-family:inherit; font-size:12px; color:#fff; background:#222; border:2px solid #555;
@@ -20,7 +35,15 @@
   }
 </style>
 <div id="wrap">
-  <canvas id="game" width="224" height="288"></canvas>
+  <div id="screen">
+    <canvas id="game" width="224" height="288"></canvas>
+    <form id="nick" hidden>
+      <label for="nickInput">NICKNAME (A-Z 0-9)</label>
+      <input id="nickInput" maxlength="12" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="ACE PILOT">
+      <div class="row"><button type="submit" id="nickSave">SAVE</button><button type="button" id="nickCancel">CANCEL</button></div>
+      <p id="nickMsg" role="status"></p>
+    </form>
+  </div>
   <div id="help">← → 이동 · SPACE/Z 발사 · ENTER 시작 · P 일시정지 · M 소리</div>
   <div id="touch">
     <div><button data-k="ArrowLeft">◀</button> <button data-k="ArrowRight">▶</button></div>
@@ -114,11 +137,14 @@ function press(code, down) {
   }
   keys[code] = down;
 }
+const typing = e => e.target instanceof HTMLInputElement; // 닉네임 입력 중에는 게임 키를 무시
 addEventListener('keydown', e => {
-  if (['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Space'].includes(e.code)) e.preventDefault();
+  if (typing(e)) return;
+  // Enter 도 막아서, YES 를 고른 Enter 가 방금 열린 닉네임 입력창을 빈 값으로 제출하지 않게 함
+  if (['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Space','Enter'].includes(e.code)) e.preventDefault();
   audio(); press(e.code, true);
 });
-addEventListener('keyup', e => press(e.code, false));
+addEventListener('keyup', e => press(e.code, false)); // 떼는 입력은 항상 반영 (입력창으로 포커스가 넘어가도 키가 눌린 채로 남지 않게)
 document.querySelectorAll('#touch button').forEach(b => {
   const k = b.dataset.k;
   b.addEventListener('pointerdown', e => { e.preventDefault(); audio(); press(k, true); });
@@ -137,20 +163,24 @@ const player = { x: W / 2, y: PY, state: 'play', dual: false, a: 0 };
 const ships = () => player.dual ? [player.x - 8, player.x + 8] : [player.x];
 const isDiving = e => e.st === 'dive' || e.st === 'escort' || e.st === 'beam';
 
-// 공유 랭킹: 아티팩트 db (플레이어마다 최고 점수 1개, scores/<userId>). 없으면 브라우저에만 저장
-let DB = null, UID = null;
+// ---------- 랭킹 저장소 (아티팩트 db: 플레이어마다 최고 점수 1개, scores/<userId>) ----------
+let DB = null, UID = null, watching = false;
 async function loadScores() {
-  try { const b = JSON.parse(localStorage.getItem('ss-best') || 'null'); if (b) hi = Math.max(hi, b); } catch { }
-  try { scores = JSON.parse(localStorage.getItem('ss-scores') || '[]'); } catch { }
+  if (watching || !window.claude?.use) return;
   try {
-    if (!window.claude?.use) return;
     DB = await claude.use('db'); const u = await claude.use('user');
     UID = u ? await u.id() : null;
     if (!DB) return;
+    watching = true;
     DB.collection('scores').orderBy('score', 'desc').limit(10).onSnapshot(s => {
       scores = s.docs.map(d => d.data()); if (scores[0]) hi = Math.max(hi, scores[0].score);
     }, () => {});
   } catch { }
+}
+function saveScore(entry) {
+  if (!DB || !UID) return Promise.reject(new Error('leaderboard unavailable'));
+  const ref = DB.doc('scores/' + UID);
+  return ref.get().then(s => { const prev = s.data(); if (!prev || prev.score < entry.score) return ref.set(entry); });
 }
 loadScores();
 
@@ -503,46 +533,58 @@ function updGame() {
 
 function gameOver() { state = 'over'; stTimer = 0; }
 
-const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 .';
-let nameBuf = [0, 0, 0], namePos = 0;
+// ---------- 게임 종료 후 기록 저장 ----------
+const NICK_RE = /^[A-Za-z0-9 _-]{1,12}$/;
+const nickForm = document.getElementById('nick'), nickInput = document.getElementById('nickInput');
+const nickMsg = document.getElementById('nickMsg'), nickSave = document.getElementById('nickSave');
+let askYes = true, notice = '', noticeT = 0;
+
 function onKey(code) {
   if (code === 'KeyM') muted = !muted;
   if (code === 'KeyP' && state === 'game') paused = !paused;
-  if (state !== 'name') return;
-  const L = LETTERS.length;
-  if (code === 'ArrowRight' || code === 'ArrowUp') nameBuf[namePos] = (nameBuf[namePos] + 1) % L;
-  else if (code === 'ArrowLeft' || code === 'ArrowDown') nameBuf[namePos] = (nameBuf[namePos] + L - 1) % L;
-  else if (code === 'Backspace' && namePos > 0) namePos--;
-  else if (/^Key[A-Z]$/.test(code) || /^Digit\d$/.test(code)) { nameBuf[namePos] = LETTERS.indexOf(code.slice(-1)); namePos++; }
-  else if (isFireKey(code) || code === 'Enter') namePos++;
-  if (namePos >= 3) submitName();
+  if (state !== 'ask') return;
+  if (/^Arrow/.test(code)) askYes = !askYes;
+  else if (code === 'KeyY') openNickForm();
+  else if (code === 'KeyN' || code === 'Escape') skipSave();
+  else if (isFireKey(code) || code === 'Enter') askYes ? openNickForm() : skipSave();
 }
-function submitName() {
-  const name = nameBuf.map(i => LETTERS[i]).join('').trim() || 'AAA';
-  state = 'title';
-  const entry = { name, score: G.score, stage: G.stage, at: Date.now() };
-  const local = () => {
-    scores = [...scores, entry].sort((a, b) => b.score - a.score).slice(0, 10);
-    try { localStorage.setItem('ss-scores', JSON.stringify(scores)); } catch { }
-  };
-  try { localStorage.setItem('ss-best', JSON.stringify(Math.max(G.score, JSON.parse(localStorage.getItem('ss-best') || '0')))); } catch { }
-  if (!DB || !UID) return local();
-  const ref = DB.doc('scores/' + UID);
-  ref.get().then(s => { const prev = s.data(); if (!prev || prev.score < entry.score) return ref.set(entry); }).catch(local);
+// 이 키 입력이 타이틀 화면에서 '게임 시작'으로 다시 쓰이지 않도록 입력을 소모
+function skipSave() { state = 'title'; firePressed = enterPressed = false; }
+function openNickForm() {
+  state = 'name'; nickForm.hidden = false; nickInput.value = ''; nickMsg.textContent = ''; nickInput.focus();
 }
+function closeNickForm(msg = '') {
+  nickForm.hidden = true; nickInput.blur(); state = 'title'; notice = msg; noticeT = msg ? 240 : 0;
+}
+nickInput.addEventListener('input', () => {
+  const v = nickInput.value.replace(/[^A-Za-z0-9 _-]/g, '');
+  if (v !== nickInput.value) { nickInput.value = v; nickMsg.textContent = '영문, 숫자, 공백, _ - 만 쓸 수 있어요'; }
+});
+nickInput.addEventListener('keydown', e => { if (e.key === 'Escape') closeNickForm(); });
+document.getElementById('nickCancel').addEventListener('click', () => closeNickForm());
+nickForm.addEventListener('submit', e => {
+  e.preventDefault();
+  const name = nickInput.value.trim();
+  if (!NICK_RE.test(name)) { nickMsg.textContent = '닉네임을 영문 1~12자로 입력해 주세요'; return; }
+  nickSave.disabled = true; nickMsg.textContent = '저장 중…';
+  saveScore({ name, score: G.score, stage: G.stage, shots: G.shots, hits: G.hits })
+    .then(() => { closeNickForm('RECORD SAVED'); loadScores(); })
+    .catch(() => { nickMsg.textContent = '저장하지 못했어요. 인터넷 연결을 확인하고 다시 눌러 주세요'; })
+    .finally(() => { nickSave.disabled = false; });
+});
 
 function update() {
   frame++;
   stars.forEach(s => { s.y += player.state === 'dead' ? s.sp * 0.3 : s.sp; if (s.y > H) { s.y = 0; s.x = rnd(W); } });
   fx.forEach(f => f.t++); fx = fx.filter(f => f.t < (f.big ? 50 : 22));
   pops.forEach(p => p.t++); pops = pops.filter(p => p.t < 70);
+  if (noticeT > 0) noticeT--;
   if (state === 'title') { if (enterPressed || firePressed) startGame(); }
   else if (state === 'game') { if (!paused) updGame(); }
   else if (state === 'over') { if (++stTimer > 180) { state = 'results'; stTimer = 0; } }
   else if (state === 'results') {
     if (++stTimer > 300 || (stTimer > 60 && (enterPressed || firePressed))) {
-      const qualifies = G.score > 0 && (scores.length < 10 || G.score > scores[scores.length - 1].score);
-      if (qualifies) { state = 'name'; nameBuf = [0, 0, 0]; namePos = 0; } else state = 'title';
+      if (G.score > 0) { state = 'ask'; askYes = true; } else state = 'title';
     }
   }
   firePressed = enterPressed = false;
@@ -636,7 +678,8 @@ function drawTitle() {
   rows.forEach(([img, s], i) => { spr(img, 52, 112 + i * 16); txt(s, 72, 109 + i * 16, '#fff', 'left', 6); });
   txt('TOP 5', W / 2, 166, '#ffd23f', 'center', 8);
   scores.slice(0, 5).forEach((s, i) =>
-    txt(`${i + 1}. ${s.name.padEnd(3)} ${String(s.score).padStart(7)} S${s.stage}`, W / 2, 180 + i * 11, '#ddd', 'center', 6));
+    txt(`${i + 1}. ${s.name.padEnd(12)} ${String(s.score).padStart(7)} S${s.stage}`, W / 2, 180 + i * 11, '#ddd', 'center', 6));
+  if (noticeT > 0) txt(notice, W / 2, 232, '#4df', 'center', 6);
   if (!scores.length) txt('NO RECORDS YET', W / 2, 182, '#777', 'center', 6);
   if ((frame >> 5) & 1 && t >= 1) txt('PRESS ENTER / FIRE', W / 2, 244, '#fff');
   txt('BONUS SHIP 20000 / 70000 PTS', W / 2, 262, '#aaa', 'center', 5);
@@ -658,13 +701,15 @@ function draw() {
       txt('NUMBER OF HITS', 24, cy, '#fff', 'left'); txt(String(G.hits), W - 24, cy, '#fff', 'right');
       txt('HIT-MISS RATIO', 24, cy + 16, '#4df', 'left'); txt(ratio + '%', W - 24, cy + 16, '#4df', 'right');
     }
-    if (state === 'name') {
-      ctx.fillStyle = 'rgba(0,0,0,0.75)'; ctx.fillRect(0, cy - 50, W, 110);
-      txt('ENTER YOUR INITIALS !', W / 2, cy - 40, '#f33');
-      txt('SCORE ' + G.score, W / 2, cy - 24, '#fff');
-      nameBuf.forEach((c, i) => txt(LETTERS[c], W / 2 - 16 + i * 16, cy, i === namePos && (frame >> 3) & 1 ? '#555' : '#ffd23f', 'center', 12));
-      txt('◀▶ 문자 선택 · FIRE 확정', W / 2, cy + 30, '#aaa', 'center', 6);
+    if (state === 'ask') {
+      ctx.fillStyle = 'rgba(0,0,0,0.8)'; ctx.fillRect(0, cy - 50, W, 110);
+      txt('SAVE YOUR RECORD ?', W / 2, cy - 40, '#f33');
+      txt(`SCORE ${G.score}  STAGE ${G.stage}`, W / 2, cy - 22, '#fff', 'center', 6);
+      [['YES', W / 2 - 36, askYes], ['NO', W / 2 + 36, !askYes]].forEach(([s, x, on]) =>
+        txt(on ? `> ${s} <` : s, x, cy, on ? '#ffd23f' : '#777', 'center', 8));
+      txt('◀▶ SELECT · FIRE OK', W / 2, cy + 24, '#aaa', 'center', 6);
     }
+    if (state === 'name') { ctx.fillStyle = 'rgba(0,0,0,0.8)'; ctx.fillRect(0, 0, W, H); }
   }
   drawHUD();
 }

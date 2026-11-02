@@ -27,8 +27,11 @@ dotnet run
 - 호위기를 거느린 플래그십을 격추하면 400 / 800 / 1600점
 - 3, 7, 11… 스테이지는 **챌린징 스테이지**(40기를 모두 격추하면 PERFECT 보너스 10000점)
 - 20000점, 70000점, 이후 70000점마다 보너스 전투기
-- 게임 오버 후 명중률 결과 화면 → 이니셜 입력 → 서버 랭킹에 저장
+- 게임 오버 후 명중률 결과 화면 → **기록을 저장할지 질문** → YES면 영문 닉네임(1~12자) 입력 → Supabase 랭킹에 저장
 
 ## 구조
-- `src/StarSwarm/Program.cs` — 정적 파일 서빙 + 랭킹 API(`GET/POST /api/scores`, `App_Data/scores.json`에 저장)
+- `src/StarSwarm/Program.cs` — 게임 파일을 제공하는 정적 웹 서버
+- 랭킹 — 브라우저가 Supabase(`public.scores` 테이블)에 직접 저장·조회. 보안 규칙(RLS)으로 **읽기·추가만 허용**하고 수정·삭제는 막혀 있어요
+- `scripts/build_web.py` — HTML 한 장짜리 버전 생성 (`web/index.html`: GitHub Pages, `web/star-swarm.html`: Claude 아티팩트)
+- `scripts/verify_game.js` — 요구사항 자동 검증 (`node scripts/verify_game.js`, playwright 필요)
 - `src/StarSwarm/wwwroot/game.js` — Canvas 게임 엔진(60fps 고정 루프, WebAudio로 합성한 효과음)

@@ -20,6 +20,17 @@ const check = (name, ok, detail = '') => { results.push(ok); console.log(`${ok ?
   const browser = await chromium.launch({ executablePath: fs.existsSync('/opt/pw-browsers/chromium') ? '/opt/pw-browsers/chromium' : undefined });
   const page = await browser.newPage();
   const errors = []; page.on('pageerror', e => errors.push(e.message));
+  // Supabase REST API 흉내: 조회는 빈 목록, 저장 요청은 본문을 기록 (failSave 가 true면 500 응답)
+  const saved = []; let failSave = false;
+  await page.route('**/rest/v1/scores**', route => {
+    const req = route.request();
+    if (req.method() === 'POST') {
+      if (failSave) return route.fulfill({ status: 500, body: '{}' });
+      saved.push({ body: JSON.parse(req.postData()), key: req.headers()['apikey'] });
+      return route.fulfill({ status: 201, body: '' });
+    }
+    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(saved.map(s => s.body)) });
+  });
   await page.goto(`http://localhost:${server.address().port}/`);
   await page.waitForTimeout(500); await page.keyboard.press('Enter');
   const until = (fn, ms = 30000) => page.waitForFunction(fn, null, { timeout: ms }).then(() => true, () => false);
@@ -77,6 +88,40 @@ const check = (name, ok, detail = '') => { results.push(ok); console.log(`${ok ?
   check('챌린징 스테이지 진입', await page.evaluate(() => G.challenge));
   check('챌린징 스테이지 적이 모두 퇴장하고 종료', await until(() => G.stage === 4, 40000));
 
+  // 요구사항 4: 게임 종료 → 결과 화면 → 저장 여부 질문 → 영문 닉네임 → Supabase 저장
+  const toResults = () => page.evaluate(() => { G.score = 12340; G.stage = 5; G.shots = 80; G.hits = 30; state = 'results'; stTimer = 400; });
+  const formShown = () => page.isVisible('#nick');
+  await toResults();
+  check('결과 화면 다음에 저장 여부 질문', await until(() => state === 'ask', 3000));
+  check('저장 질문 단계에서는 입력창이 보이지 않음', !(await formShown()));
+  await page.keyboard.press('Enter');
+  check('YES 선택 → 닉네임 입력창 표시', await until(() => state === 'name', 3000) && await formShown());
+  await page.waitForTimeout(100);
+  check('입력창을 연 Enter 가 빈 값으로 제출되지 않음', await page.evaluate(() => nickMsg.textContent === ''));
+  await page.keyboard.type('김Ace Pilot!7');
+  check('영문 외 문자는 입력되지 않음', await page.inputValue('#nickInput') === 'Ace Pilot7', await page.inputValue('#nickInput'));
+  await page.click('#nickSave');
+  await until(() => state === 'title', 5000);
+  const s0 = saved[0];
+  check('Supabase에 기록 저장', !!s0 && s0.body.name === 'Ace Pilot7' && s0.body.score === 12340 && s0.body.stage === 5 && s0.body.hits === 30,
+    s0 ? JSON.stringify(s0.body) : '요청 없음');
+  check('공개용 publishable 키로 요청', !!s0 && /^sb_publishable_/.test(s0.key));
+  check('저장 후 Enter 키가 눌린 채로 남지 않음', await page.evaluate(() => !keys.Enter));
+  check('저장 후 타이틀 랭킹에 반영', await until(() => scores.some(s => s.name === 'Ace Pilot7'), 5000));
+
+  await toResults(); await until(() => state === 'ask', 3000);
+  await page.keyboard.press('ArrowRight'); await page.keyboard.press('Enter');
+  await page.waitForTimeout(300);
+  check('NO 선택 → 저장하지 않고 타이틀에 머무름', await page.evaluate(() => state === 'title') && saved.length === 1);
+
+  failSave = true; await toResults(); await until(() => state === 'ask', 3000);
+  await page.keyboard.press('Enter'); await page.fill('#nickInput', 'Retry'); await page.click('#nickSave');
+  await page.waitForTimeout(500);
+  check('저장 실패 시 안내 문구 표시 + 입력창 유지', await page.evaluate(() => state === 'name' && /저장하지 못했어요/.test(nickMsg.textContent)));
+  failSave = false; await page.click('#nickSave');
+  check('다시 누르면 저장 성공', await until(() => state === 'title', 5000) && saved.length === 2);
+
+  check('저장 후 입력창이 화면에서 사라짐', !(await formShown()));
   check('페이지 오류 없음', errors.length === 0, errors.join(' | '));
   await browser.close(); server.close();
   const failed = results.filter(r => !r).length;

@@ -483,5 +483,3 @@ $RECYCLE.BIN/
 # Vim temporary swap files
 *.swp
 
-# 랭킹 데이터
-App_Data/

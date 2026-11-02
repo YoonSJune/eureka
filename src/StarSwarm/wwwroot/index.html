@@ -14,6 +14,21 @@
   #wrap { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; }
   canvas { image-rendering:pixelated; image-rendering:crisp-edges; background:#000;
     height:min(100vh, calc(100vw * 288 / 224)); aspect-ratio:224/288; }
+  #screen { position:relative; max-width:100%; }
+  #screen canvas { display:block; }
+  #nick { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:82%; box-sizing:border-box;
+    display:flex; flex-direction:column; gap:10px; padding:16px; background:#0b0b18; border:2px solid var(--accent); }
+  #nick[hidden] { display:none; } /* display:flex 가 hidden 속성을 덮어쓰지 않도록 */
+  #nick label { font-size:10px; color:#ffd23f; text-align:center; }
+  #nick input { font-family:inherit; font-size:14px; padding:8px; background:#000; color:#fff; border:2px solid #555;
+    width:100%; box-sizing:border-box; }
+  #nick input:focus { outline:none; border-color:#33e0ff; }
+  #nick .row { display:flex; gap:8px; }
+  #nick button { flex:1; font-family:inherit; font-size:10px; padding:10px 4px; color:#fff; background:#222; border:2px solid #555; cursor:pointer; }
+  #nick button[type=submit] { background:#5a1010; border-color:var(--accent); }
+  #nick button:focus-visible { outline:2px solid #33e0ff; }
+  #nick button:disabled { opacity:.5; cursor:wait; }
+  #nickMsg { margin:0; min-height:1.6em; font-family:system-ui,sans-serif; font-size:12px; color:#ff9a2e; text-align:center; }
   #help { font-size:8px; color:#777; padding:6px 16px; text-align:center; line-height:1.6; }
   #touch { display:none; width:100%; max-width:480px; justify-content:space-between; padding:8px 16px; box-sizing:border-box; }
   #touch button { font-family:inherit; font-size:12px; color:#fff; background:#222; border:2px solid #555;
@@ -28,7 +43,15 @@
 </head>
 <body>
 <div id="wrap">
-  <canvas id="game" width="224" height="288"></canvas>
+  <div id="screen">
+    <canvas id="game" width="224" height="288"></canvas>
+    <form id="nick" hidden>
+      <label for="nickInput">NICKNAME (A-Z 0-9)</label>
+      <input id="nickInput" maxlength="12" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="ACE PILOT">
+      <div class="row"><button type="submit" id="nickSave">SAVE</button><button type="button" id="nickCancel">CANCEL</button></div>
+      <p id="nickMsg" role="status"></p>
+    </form>
+  </div>
   <div id="help">← → 이동 · SPACE/Z 발사 · ENTER 시작 · P 일시정지 · M 소리</div>
   <div id="touch">
     <div><button data-k="ArrowLeft">◀</button> <button data-k="ArrowRight">▶</button></div>
