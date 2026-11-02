@@ -144,6 +144,9 @@ const CH_PATH = [
 ];
 const mir = p => ({ x: W - p.x, y: p.y, a: -p.a, scr: p.scr.map(([n, t]) => [n, -t]) });
 
+// 난이도 계수: 1스테이지 0 → 13스테이지 이상 1 (선형 증가)
+const diff = () => Math.min(1, (G.stage - 1) / 12);
+
 function nextStage(first = false) {
   G.stage++;
   G.challenge = G.stage >= 3 && (G.stage - 3) % 4 === 0;
@@ -151,7 +154,7 @@ function nextStage(first = false) {
   G.atk = 120; G.chHits = 0; G.entering = true; G.first = first;
   enemies = []; pB = []; eB = []; pops = [];
   if (!first) SFX.stage();
-  const q = [], sp = 2.2 + Math.min(1, G.stage * 0.06);
+  const q = [], sp = 2.2 + 0.9 * diff();
   if (G.challenge) {
     const kinds = ['drone', 'escort', 'boss', 'escort', 'drone'];
     for (let w = 0; w < 5; w++) {
@@ -177,8 +180,14 @@ function nextStage(first = false) {
 }
 
 function spawn(q) {
-  enemies.push({ kind: q.kind, hp: q.kind === 'boss' && !G.challenge ? 2 : 1, slot: q.slot, x: q.x, y: q.y, a: q.a,
-    sp: q.sp, st: 'enter', scr: q.scr, si: 0, sf: 0, wave: q.wave, entry: true, life: 0 });
+  const e = { kind: q.kind, hp: q.kind === 'boss' && !G.challenge ? 2 : 1, slot: q.slot, x: q.x, y: q.y, a: q.a,
+    sp: q.sp, st: 'enter', scr: q.scr, si: 0, sf: 0, wave: q.wave, entry: true, life: 0 };
+  if (!G.challenge && G.stage >= 2) {
+    const d = diff();
+    if (Math.random() < 0.15 + 0.45 * d) e.fireAt = 25 + (rnd(50) | 0);        // 입장하면서 조준 사격
+    if (G.stage >= 3 && Math.random() < 0.05 + 0.25 * d) e.breakAway = true;  // 입장 직후 바로 급강하
+  }
+  enemies.push(e);
 }
 
 // ---------- 적 이동 ----------
@@ -192,8 +201,8 @@ const offscreen = e => e.x < -24 || e.x > W + 24 || e.y < -24 || e.y > H + 24;
 
 function startDive(e, beam = false) {
   e.st = beam ? 'beam' : 'dive'; e.ph = 0; e.pf = 0; e.turned = 0; e.a = Math.PI;
-  e.td = e.x < W / 2 ? 1 : -1; e.sp = 1.8 + Math.min(1, G.stage * 0.07);
-  e.shots = G.stage > 2 ? 2 : 1; e.entry = false;
+  e.td = e.x < W / 2 ? 1 : -1; e.sp = 1.7 + 1.3 * diff(); e.turn = 0.03 + 0.03 * diff();
+  e.shots = 1 + Math.floor(diff() * 3); e.entry = false;
   if (beam) { e.tx = clamp(player.x, 24, W - 24); e.ty = PY - 122; e.bt = 0; e.beamL = 0; e.capturing = false; }
 }
 
@@ -201,7 +210,12 @@ function updEnemy(e) {
   e.life++;
   switch (e.st) {
     case 'enter':
-      if (runScript(e)) e.st = G.challenge ? 'exit' : 'home';
+      if (e.life === e.fireAt) eFire(e);
+      if (runScript(e)) {
+        if (G.challenge) e.st = 'exit';
+        else if (e.breakAway && player.state === 'play') { const a = e.a; startDive(e); e.a = a; e.ph = 1; }
+        else e.st = 'home';
+      }
       mv(e);
       if (G.challenge && e.life > 60 && offscreen(e)) e.dead = e.gone = true;
       break;
@@ -235,8 +249,8 @@ function diveUpd(e) {
     e.a += e.td * 0.085; e.turned += 0.085;
     if (e.turned > Math.PI + 0.5) { e.ph = 1; e.pf = 0; }
   } else if (e.ph === 1) {
-    e.a = turnTo(e.a, Math.atan2(player.x - e.x, Math.max(20, player.y - e.y)), 0.035);
-    if (e.pf === 8 || (e.shots > 1 && e.pf === 30)) { eFire(e); e.fireNow = true; }
+    e.a = turnTo(e.a, Math.atan2(player.x - e.x, Math.max(20, player.y - e.y)), e.turn || 0.035);
+    if (e.pf === 8 || (e.shots > 1 && e.pf === 26) || (e.shots > 2 && e.pf === 44)) { eFire(e); e.fireNow = true; }
     if (e.y > H - 100) e.ph = 2;
   }
   mv(e);
@@ -274,9 +288,10 @@ function beamUpd(e) {
 }
 
 function eFire(e) {
-  if (player.state !== 'play' || G.challenge || eB.length >= 8 || e.y > PY - 30) return;
-  const dy = Math.max(40, player.y - e.y);
-  eB.push({ x: e.x, y: e.y + 6, vx: clamp((player.x - e.x) / dy * 3, -1.2, 1.2), vy: 3 });
+  const d = diff();
+  if (player.state !== 'play' || G.challenge || eB.length >= 6 + 6 * d || e.y > PY - 30) return;
+  const v = 2.6 + 1.4 * d, dy = Math.max(40, player.y - e.y);
+  eB.push({ x: e.x, y: e.y + 6, vx: clamp((player.x - e.x) / dy * v, -1.5, 1.5), vy: v });
 }
 
 // ---------- 공격 패턴 ----------
@@ -285,9 +300,10 @@ function attackLogic() {
   if (--G.atk > 0) return;
   const form = enemies.filter(e => e.st === 'form');
   const active = enemies.filter(e => DIVING.includes(e.st)).length;
-  G.atk = Math.max(30, 110 - G.stage * 6) + rnd(60);
+  const d = diff();
+  G.atk = 140 - 100 * d + rnd(80 - 50 * d);
   if (form.length + active <= 6) G.atk *= 0.5; // 남은 적이 적으면 더 공격적
-  if (!form.length || active >= 2 + Math.min(4, G.stage >> 1)) return;
+  if (!form.length || active >= 2 + Math.round(5 * d)) return;
   const bosses = form.filter(e => e.kind === 'boss');
   if (bosses.length && Math.random() < 0.35) {
     const b = pick(bosses);
@@ -301,6 +317,8 @@ function attackLogic() {
   } else {
     const pool = form.filter(e => e.kind !== 'boss');
     if (pool.length) startDive(pick(pool)); else startDive(pick(bosses));
+    const more = pool.filter(e => e.st === 'form');
+    if (more.length && Math.random() < d * 0.5) startDive(pick(more)); // 후반엔 2기 동시 급강하
   }
   SFX.dive();
 }
@@ -331,13 +349,7 @@ function hitEnemy(e) {
   if (pts >= 400) popup(e.x, e.y, String(pts));
   boom(e.x, e.y, false, e.kind === 'boss' ? '#ffd23f' : e.kind === 'escort' ? '#ff9a2e' : '#ff6fd8');
   if (e.kind === 'boss' && player.capBoss === e && player.state === 'captured') { player.state = 'play'; player.y = PY; player.a = 0; }
-  if (e.kind === 'boss' && captive && captive.boss === e) {
-    if (diving && player.state === 'play') { captive.st = 'rescue'; SFX.rescue(); }
-    else { // 편대 중에 보스를 잃으면 붙잡힌 전투기가 적으로 돌변
-      const c = { kind: 'cap', hp: 1, slot: null, x: captive.x, y: captive.y, a: 0, sp: 2, st: 'dive', life: 0 };
-      startDive(c); c.ph = 1; c.sp = 2.2; enemies.push(c); captive = null;
-    }
-  }
+  if (e.kind === 'boss' && captive && captive.boss === e) { captive.st = 'rescue'; SFX.rescue(); say('RESCUE !', 90); }
 }
 
 function playerHit(i) {
@@ -366,7 +378,7 @@ function updPlayer() {
     }
   } else if (p.state === 'dead') {
     G.dt++;
-    if (G.dt > 150 && !enemies.some(e => DIVING.includes(e.st)) && !(captive && captive.st === 'rescue')) {
+    if (G.dt > 150 && !enemies.some(e => DIVING.includes(e.st))) {
       if (G.reserve <= 0) return gameOver();
       G.reserve--; p.state = 'ready'; G.rt = 0;
     }
@@ -381,8 +393,8 @@ function updCaptive() {
     const b = c.boss, s = Math.sin(b.a), co = Math.cos(b.a);
     c.x = b.x - 14 * s; c.y = b.y - 14 * co; c.a = b.a + Math.PI;
   } else if (c.st === 'rescue') {
-    if (player.state !== 'play') { captive = null; return; }
     c.a += 0.25;
+    if (player.state !== 'play') return; // 내 전투기가 다시 나올 때까지 제자리에서 대기
     const tx = clamp(player.x + 8, 24, W - 8), ty = player.y, dx = tx - c.x, dy = ty - c.y, d = Math.hypot(dx, dy);
     if (d < 2.5) {
       player.dual = true; player.x = clamp(tx - 8, 16, W - 16); captive = null; say('DUAL FIGHTER', 90);
