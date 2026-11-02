@@ -142,7 +142,7 @@ let state = 'title', frame = 0, stTimer = 0, hi = 20000, scores = [];
 let G = null, enemies = [], pB = [], eB = [], fx = [], pops = [], captive = null;
 const player = { x: W / 2, y: PY, state: 'play', dual: false, a: 0 };
 const ships = () => player.dual ? [player.x - 8, player.x + 8] : [player.x];
-const DIVING = ['dive', 'escort', 'beam'];
+const isDiving = e => e.st === 'dive' || e.st === 'escort' || e.st === 'beam';
 
 // 공유 랭킹: 아티팩트 db (플레이어마다 최고 점수 1개, scores/<userId>). 없으면 브라우저에만 저장
 let DB = null, UID = null;
@@ -185,11 +185,11 @@ const PATH = {
   side: { x: -8, y: H - 96, a: 2.3, scr: [[18, 0], [62, 0.065]] },
 };
 const CH_PATH = [
-  { x: W / 2 - 16, y: -8, a: 0, scr: [[40, 0], [45, -0.07], [45, 0.07], [40, -0.035], [300, 0]] },
-  { x: -8, y: H - 100, a: 2.2, scr: [[30, 0], [90, 0.07], [300, 0]] },
-  { x: 40, y: -8, a: 0.3, scr: [[50, 0], [90, -0.07], [300, 0]] },
-  { x: -8, y: 120, a: 1.57, scr: [[30, 0], [40, 0.05], [40, -0.05], [40, 0.05], [300, 0]] },
-  { x: -8, y: H - 60, a: 2.6, scr: [[20, 0], [60, 0.05], [50, -0.06], [300, 0]] },
+  { x: W / 2 - 16, y: -8, a: 0, scr: [[40, 0], [45, -0.07], [45, 0.07], [40, -0.035]] },
+  { x: -8, y: H - 100, a: 2.2, scr: [[30, 0], [90, 0.07]] },
+  { x: 40, y: -8, a: 0.3, scr: [[50, 0], [90, -0.07]] },
+  { x: -8, y: 120, a: 1.57, scr: [[30, 0], [40, 0.05], [40, -0.05], [40, 0.05]] },
+  { x: -8, y: H - 60, a: 2.6, scr: [[20, 0], [60, 0.05], [50, -0.06]] },
 ];
 const mir = p => ({ x: W - p.x, y: p.y, a: -p.a, scr: p.scr.map(([n, t]) => [n, -t]) });
 
@@ -209,7 +209,7 @@ function nextStage(first = false) {
     for (let w = 0; w < 5; w++) {
       const path = CH_PATH[(w + G.stage) % 5], kind = kinds[(w + G.stage) % 5];
       for (let i = 0; i < 8; i++)
-        q.push({ t: w * 170 + (i >> 1) * 9, kind, slot: null, ...(i % 2 ? mir(path) : path), wave: w, sp: 2.4 });
+        q.push({ t: w * 170 + (i >> 1) * 9, kind, slot: null, ...(i % 2 ? mir(path) : path), sp: 2.4 });
     }
   } else {
     const S = makeSlots(), take = f => S.filter(f);
@@ -223,14 +223,14 @@ function nextStage(first = false) {
       [[take(s => (s.r === 3 && s.c < 3) || (s.r === 4 && s.c < 5)), PATH.top]],
     ];
     waves.forEach((streams, w) => streams.forEach(([list, path]) =>
-      list.forEach((slot, i) => q.push({ t: w * 150 + i * 7, kind: slot.k, slot, ...path, wave: w, sp }))));
+      list.forEach((slot, i) => q.push({ t: w * 150 + i * 7, kind: slot.k, slot, ...path, sp }))));
   }
   G.queue = q.sort((a, b) => a.t - b.t);
 }
 
 function spawn(q) {
   const e = { kind: q.kind, hp: q.kind === 'boss' && !G.challenge ? 2 : 1, slot: q.slot, x: q.x, y: q.y, a: q.a,
-    sp: q.sp, st: 'enter', scr: q.scr, si: 0, sf: 0, wave: q.wave, entry: true, life: 0 };
+    sp: q.sp, st: 'enter', scr: q.scr, si: 0, sf: 0, entry: true, life: 0 };
   if (!G.challenge && G.stage >= 2) {
     const d = diff();
     if (Math.random() < 0.15 + 0.45 * d) e.fireAt = 25 + (rnd(50) | 0);        // 입장하면서 조준 사격
@@ -251,7 +251,7 @@ const offscreen = e => e.x < -24 || e.x > W + 24 || e.y < -24 || e.y > H + 24;
 function startDive(e, beam = false) {
   e.st = beam ? 'beam' : 'dive'; e.ph = 0; e.pf = 0; e.turned = 0; e.a = Math.PI;
   e.td = e.x < W / 2 ? 1 : -1; e.sp = 1.7 + 1.3 * diff(); e.turn = 0.03 + 0.03 * diff();
-  e.shots = 1 + Math.floor(diff() * 3); e.entry = false;
+  e.shots = 1 + Math.round(diff() * 2); e.entry = false; // 1발 → 3발
   if (beam) { e.tx = clamp(player.x, 24, W - 24); e.ty = PY - 122; e.bt = 0; e.beamL = 0; e.capturing = false; }
 }
 
@@ -266,10 +266,9 @@ function updEnemy(e) {
         else e.st = 'home';
       }
       mv(e);
-      if (G.challenge && e.life > 60 && offscreen(e)) e.dead = e.gone = true;
       break;
     case 'exit':
-      mv(e); if (offscreen(e)) e.dead = e.gone = true; break;
+      mv(e); if (offscreen(e)) e.dead = true; break;
     case 'home': {
       const p = slotPos(e.slot), dx = p.x - e.x, dy = p.y - e.y, d = Math.hypot(dx, dy), sp = 2.4;
       if (d < sp + 0.5) { e.x = p.x; e.y = p.y; e.st = 'form'; e.entry = false; }
@@ -298,13 +297,12 @@ function diveUpd(e) {
     e.a += e.td * 0.085; e.turned += 0.085;
     if (e.turned > Math.PI + 0.5) { e.ph = 1; e.pf = 0; }
   } else if (e.ph === 1) {
-    e.a = turnTo(e.a, Math.atan2(player.x - e.x, Math.max(20, player.y - e.y)), e.turn || 0.035);
+    e.a = turnTo(e.a, Math.atan2(player.x - e.x, Math.max(20, player.y - e.y)), e.turn);
     if (e.pf === 8 || (e.shots > 1 && e.pf === 26) || (e.shots > 2 && e.pf === 44)) { eFire(e); e.fireNow = true; }
     if (e.y > H - 100) e.ph = 2;
   }
   mv(e);
   if (e.y > H + 12 || e.x < -40 || e.x > W + 40) {
-    if (!e.slot) { e.dead = e.gone = true; return; }
     e.y = -12; e.x = slotPos(e.slot).x; e.st = 'home'; e.leader = null;
   }
 }
@@ -348,7 +346,7 @@ function attackLogic() {
   if (G.challenge || G.entering || player.state !== 'play' || G.phase !== 'play') return;
   if (--G.atk > 0) return;
   const form = enemies.filter(e => e.st === 'form');
-  const active = enemies.filter(e => DIVING.includes(e.st)).length;
+  const active = enemies.filter(isDiving).length;
   const d = diff();
   G.atk = 140 - 100 * d + rnd(80 - 50 * d);
   if (form.length + active <= 6) G.atk *= 0.5; // 남은 적이 적으면 더 공격적
@@ -361,7 +359,7 @@ function attackLogic() {
     } else {
       startDive(b);
       const esc = form.filter(e => e.kind === 'escort' && e.slot.r === 1 && Math.abs(e.slot.c - b.slot.c) <= 1).slice(0, 2);
-      esc.forEach((x, i) => { x.st = 'escort'; x.leader = b; x.ox = i ? 14 : -14; x.oy = -10; x.entry = false; });
+      esc.forEach((x, i) => Object.assign(x, { st: 'escort', leader: b, ox: i ? 14 : -14, oy: -10, sp: b.sp, turn: b.turn }));
     }
   } else {
     const pool = form.filter(e => e.kind !== 'boss');
@@ -386,12 +384,11 @@ function say(m, t = 120) { G.msg = m; G.msgT = t; }
 function hitEnemy(e) {
   if (e.kind === 'boss' && e.hp > 1) { e.hp--; e.hurt = true; SFX.bossHit(); return; }
   e.dead = true; SFX.hit();
-  const diving = DIVING.includes(e.st);
+  const diving = isDiving(e);
   let pts;
   if (G.challenge) { pts = 100; G.chHits++; }
   else if (e.kind === 'drone') pts = diving ? 100 : 50;
   else if (e.kind === 'escort') pts = diving ? 160 : 80;
-  else if (e.kind === 'cap') pts = 1000;
   else if (!diving) pts = 150;
   else pts = [400, 800, 1600][enemies.filter(x => x.leader === e && !x.dead && x.st === 'escort').length];
   addScore(pts);
@@ -427,7 +424,7 @@ function updPlayer() {
     }
   } else if (p.state === 'dead') {
     G.dt++;
-    if (G.dt > 150 && !enemies.some(e => DIVING.includes(e.st))) {
+    if (G.dt > 150 && !enemies.some(isDiving)) {
       if (G.reserve <= 0) return gameOver();
       G.reserve--; p.state = 'ready'; G.rt = 0;
     }
@@ -464,19 +461,16 @@ function updBullets() {
       b.dead = true; G.hits++; addScore(500); boom(captive.x, captive.y, true, '#ff3b3b'); SFX.boom(); captive = null;
     }
   }
-  if (player.state === 'play') {
-    for (const b of eB) {
-      if (b.dead) continue;
-      const sx = ships(), i = sx.findIndex(x => Math.abs(b.x - x) < 5 && Math.abs(b.y - player.y) < 7);
-      if (i >= 0) { b.dead = true; playerHit(i); if (player.state !== 'play') break; }
-    }
+  // 내 기체(듀얼이면 2대) 중 o 와 겹친 기체의 번호, 없으면 -1
+  const shipHit = (o, rx, ry) => player.state !== 'play' ? -1
+    : ships().findIndex(x => Math.abs(o.x - x) < rx && Math.abs(o.y - player.y) < ry);
+  for (const b of eB) {
+    const i = b.dead ? -1 : shipHit(b, 5, 7);
+    if (i >= 0) { b.dead = true; playerHit(i); }
   }
-  if (player.state === 'play') {
-    for (const e of enemies) {
-      if (e.dead || e.st === 'form') continue;
-      const sx = ships(), i = sx.findIndex(x => Math.abs(e.x - x) < 10 && Math.abs(e.y - player.y) < 10);
-      if (i >= 0) { e.hp = 1; hitEnemy(e); playerHit(i); if (player.state !== 'play') break; }
-    }
+  for (const e of enemies) {
+    const i = e.dead || e.st === 'form' ? -1 : shipHit(e, 10, 10);
+    if (i >= 0) { e.hp = 1; hitEnemy(e); playerHit(i); }
   }
   pB = pB.filter(b => !b.dead); eB = eB.filter(b => !b.dead);
 }
@@ -567,7 +561,6 @@ function drawStars() {
 }
 function enemyImg(e) {
   const f = (frame >> 5) & 1;
-  if (e.kind === 'cap') return SPR.captive;
   if (e.kind === 'boss') return (e.hurt ? SPR.bossHurt : SPR.boss)[f];
   return SPR[e.kind][f];
 }
@@ -616,7 +609,7 @@ function drawHUD() {
 function drawGame() {
   enemies.forEach(e => { if (e.st === 'beam') drawBeam(e); });
   enemies.forEach(e => spr(enemyImg(e), e.x, e.y, e.st === 'form' ? 0 : e.a));
-  if (captive) spr(SPR.captive, captive.x, captive.y, captive.st === 'held' ? captive.a : captive.a);
+  if (captive) spr(SPR.captive, captive.x, captive.y, captive.a);
   const p = player;
   if (p.state === 'play' || (p.state === 'ready' && G.phase !== 'intro')) ships().forEach(x => spr(SPR.player, x, p.y));
   if (p.state === 'captured') spr(SPR.player, p.x, p.y, p.a);
